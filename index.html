@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS To React Native CSS Converter</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+</head>
+
+<body class="bg-gray-100 h-screen">
+    <py-config>
+        packages = ["cssutils"]
+    </py-config>
+
+    <h1 class="text-center py-6 text-xl font-semibold ">CSS To React Native CSS Converter</h1>
+    <main class="container mx-auto p-6 h-4/5">
+        <div class="flex h-4/5">
+            <textarea id="input" class="w-1/2 mr-5 p-4 bg-white border border-gray-300 rounded-md resize-none  h-100"
+                style="height: 100%;" placeholder="Paste or type CSS here"></textarea>
+            <textarea id="result"  class="w-1/2 ml-5 p-4 bg-white border border-gray-300 rounded-md resize-none"
+                style="height: 100%;" placeholder="Converted React Native CSS will appear here" readonly></textarea>
+        </div>
+        <h3 class="text-center text-m font-bold m-3">OR</h3>
+
+        <div class="flex justify-end  mt-4 mb-2">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-14 w-100 rounded" py-click="Convert()">
+                Convert
+            </button>
+        </div>
+    </main>
+    
+    <py-script>
+    import js
+    import json
+    import re
+    import cssutils
+    def Convert():
+        inputval = js.document.getElementById("input").value
+        result = js.document.getElementById("result")
+        result.value = css_to_json(inputval)
+
+    def css_to_json(css_code):
+    # Create a CSSParser instance
+        parser = cssutils.CSSParser()
+
+        try:
+            # Parse the CSS code
+            stylesheet = parser.parseString(css_code)
+
+            # Convert the parsed CSS data to a dictionary
+            css_data = {}
+            for rule in stylesheet:
+                if isinstance(rule, cssutils.css.CSSStyleRule):
+                    selector = rule.selectorText.strip('"')  # Remove quotes
+                    properties = {}
+                    temp=selector
+                    if (selector[0].upper() not in [chr(i) for i in range(65, 92)]):
+                             temp = selector[1:]
+                    selector=temp
+                    for prop in rule.style:
+                        prop_name = prop.name.strip('"')  # Remove quotes
+                        if (len(prop_name.split("-")) == 2):
+                            prop_name = prop_name.split(
+                                "-")[0]+(prop_name.split("-")[1].capitalize())
+                        properties[prop_name] = prop.value
+                    css_data[selector] = properties
+
+            # Convert the dictionary to JSON
+            json_data = json.dumps(css_data, indent=4)
+            reactNativeCss = ""
+            if json_data:
+                reactNativeCss = "const styles = StyleSheet.create("+json_data+");"
+            reactNativeCss = re.sub(r'"([^"]+)":', r'\1:', reactNativeCss)
+            return reactNativeCss
+        except cssutils.CSSException as e:
+            print("")
+            return None
+    </py-script>
+</body>
+
+</html>
